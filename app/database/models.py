@@ -1,8 +1,6 @@
-from sqlalchemy import create_engine, ForeignKey, String, text
+from sqlalchemy import create_engine, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
-from sqlalchemy.orm import Session, sessionmaker
-
-from datetime import datetime
+from sqlalchemy.orm import sessionmaker, relationship
 
 import config
 
@@ -21,7 +19,8 @@ class Users(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(35))
-    tg_id: Mapped[int]
+    tg_id: Mapped[int] = mapped_column()
+    is_premium: Mapped[bool] = mapped_column(default=False)
 
 
 class Currency(Base):
@@ -29,23 +28,45 @@ class Currency(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(35))
+    code: Mapped[str] = mapped_column(String(5))
 
 
 class Accounts(Base):
     __tablename__ = 'accounts'
     
     id: Mapped[int] = mapped_column(primary_key=True)
+    user: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
     name: Mapped[str] = mapped_column(String(35))
-    balance: Mapped[int]
-    currency: Mapped[int] = mapped_column(ForeignKey('currencies.id'))
+    balance: Mapped[int] = mapped_column()
+    currency: Mapped[int] = mapped_column(ForeignKey('currencies.id', ondelete='CASCADE'))
+
+
+class Directions(Base):
+    __tablename__ = 'directions'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(35))
+    direct: Mapped[bool] = mapped_column(default=False)
 
 
 class TopUps(Base):
     __tablename__ = 'topups'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    date: Mapped[str]
-    amount: Mapped[int]
+    date: Mapped[str] = mapped_column()
+    amount: Mapped[int] = mapped_column()
+    account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
+    direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
+
+
+class Spendings(Base):
+    __tablename__ = 'spendings'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    date: Mapped[str] = mapped_column()
+    amount: Mapped[int] = mapped_column()
+    account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
+    direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
 
 
 async def db_main():
