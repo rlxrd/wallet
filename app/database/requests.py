@@ -1,6 +1,6 @@
 from app.database.models import Session
-from app.database.models import Users, Currency, Accounts, TopUps, Spendings
-from sqlalchemy import select
+from app.database.models import Users, Currency, Accounts, TopUps, Spendings, Directions
+from sqlalchemy import select, update
 
 
 async def add_user_db(name, tg_id):
@@ -9,13 +9,11 @@ async def add_user_db(name, tg_id):
         if not user_query:
             session.add(Users(name=name, tg_id=tg_id))
 
-        user_accounts = session.scalar(select(Accounts).where(Accounts.user == tg_id))
+        user_accounts = session.scalar(select(Accounts.id).where(Accounts.user == user_query))
         session.commit()
         if not user_accounts:
             return False
-        else:
-            return True
-        
+        return True
 
 
 def get_currencies_db():
@@ -27,8 +25,9 @@ def get_currencies_db():
 def set_account_db(reg_data):
     with Session.begin() as session:
         try:
-            user = session.execute(select(Users.id).where(Users.tg_id == reg_data['user'])).first()
-            session.add(Accounts(name=reg_data['name'], currency=reg_data['currency'], user=user.id))
+            user_d = session.execute(select(Users.id).where(Users.tg_id == reg_data['user'])).first()
+            currency_d = session.execute(select(Currency.id).where(Currency.id == reg_data['currency'])).first()
+            session.add(Accounts(name=reg_data['name'], balance=reg_data['amount'], currency=currency_d.id, user=user_d.id))
             session.commit()
             return True
         except:
@@ -40,5 +39,42 @@ def check_currency_db(currency):
         user = session.execute(select(Currency.id).where(Currency.id == currency)).first()
         if not user:
             return False
-        else:
-            return True
+        return True
+
+
+def fetch_accounts_db(tg_id):
+    with Session.begin() as session:
+        user_d = session.execute(select(Users.id).where(Users.tg_id == tg_id)).first()
+        accounts_d = session.execute(select(Accounts.id, Accounts.name).where(Accounts.user == user_d.id)).all()
+        return accounts_d
+
+
+def fetch_account_db(acc_id):
+    with Session.begin() as session:
+        account = session.execute(select(Accounts.id).where(Accounts.id == acc_id)).first()
+        if not account:
+            return False
+        return True
+
+
+def fetch_directions_topup():
+    with Session.begin() as session:
+        direction = session.execute(select(Directions.name, Directions.id).where(Directions.direct == 1)).all()
+        return direction
+
+
+def fetch_directions_check(d_id):
+    with Session.begin() as session:
+        direction = session.execute(select(Directions.id).where(Directions.id == d_id)).all()
+        if not direction:
+            return False
+        return True
+
+
+def update_balance_db(data):
+    with Session.begin() as session:
+        account = session.execute(select(Accounts.id, Accounts.balance).where(Accounts.id == data['account'])).first()
+        direction = session.execute(select(Directions.id).where(Directions.id == data['direction'])).first()
+        session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=account.balance+int(data['amount'])))
+        session.add(TopUps(amount=data['amount'], account=account.id, direction=direction.id))
+        
