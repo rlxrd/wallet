@@ -37,7 +37,7 @@ class Accounts(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
     name: Mapped[str] = mapped_column(String(35))
-    balance: Mapped[int] = mapped_column()
+    balance: Mapped[int] = mapped_column(default=0)
     currency: Mapped[int] = mapped_column(ForeignKey('currencies.id', ondelete='CASCADE'))
 
 
@@ -71,3 +71,4 @@ class Spendings(Base):
 
 async def db_main():
     Base.metadata.create_all(bind=engine)
+    
