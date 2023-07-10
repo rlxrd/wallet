@@ -46,8 +46,8 @@ class Directions(Base):
     __tablename__ = 'directions'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(35))
-    direct: Mapped[bool] = mapped_column(default=False)
+    name: Mapped[str] = mapped_column(String(100))
+    direct: Mapped[int]
 
 
 class TopUps(Base):
@@ -72,4 +72,3 @@ class Spendings(Base):
 
 async def db_main():
     Base.metadata.create_all(bind=engine)
-    

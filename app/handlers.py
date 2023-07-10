@@ -77,8 +77,10 @@ async def registration_amount(message: types.Message, state: FSMContext):
         reg_data = await state.get_data()
         if set_account_db(reg_data):
             await message.answer(f'Регистрация успешно завершена!\n\nТеперь Вы можете управлять своими счетами по кнопкам ниже.', reply_markup=kb.main_kb)
+            await state.clear()
         else:
-            await message.answer('Произошла ошибка... Обратитесь к администратору @rlxrd')
+            await message.answer('Произошла ошибка... Обратитесь к администратору @rlxrd', reply_markup=kb.main_kb)
+            await state.clear()
     else:
             await message.answer('Упс... Вводить сумму нужно целым числом, например 123000.')
     end_time = time.time()

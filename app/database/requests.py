@@ -1,8 +1,9 @@
 from app.database.models import Session
-from app.database.models import Users, Currency, Accounts, TopUps, Spendings, Directions
+from app.database.models import Users, Currency, Accounts, TopUps, Spendings, Directions, Admins
 from sqlalchemy import select, update
 
 
+# Создание юзера при команде старт и проверка на наличие хоть одного созданного счета.
 async def add_user_db(name, tg_id):
     with Session.begin() as session:
         user_query = session.scalar(select(Users.id).where(Users.tg_id == tg_id))
@@ -16,12 +17,14 @@ async def add_user_db(name, tg_id):
         return True
 
 
+
 def get_currencies_db():
     with Session.begin() as session:
         currencies_list = session.execute(select(Currency.id, Currency.name)).all()
         return currencies_list
 
 
+# Создание счета
 def set_account_db(reg_data):
     with Session.begin() as session:
         try:
@@ -77,4 +80,20 @@ def update_balance_db(data):
         direction = session.execute(select(Directions.id).where(Directions.id == data['direction'])).first()
         session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=account.balance+int(data['amount'])))
         session.add(TopUps(amount=data['amount'], account=account.id, direction=direction.id))
-        
+        session.commit()
+
+
+"""КОМАНДЫ
+ДЛЯ АДМИНИСТРАТОРОВ
+"""
+
+def fetch_admins():
+    with Session.begin() as session:
+        admin = session.scalars(select(Admins.tg_id)).all()
+        return admin
+
+
+def add_direction_db(dir_name):
+    with Session.begin() as session:
+        session.add(Directions(name=dir_name))
+        session.commit()
