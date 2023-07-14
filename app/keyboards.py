@@ -1,6 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from app.database.requests import (fetch_accounts_db, get_currencies_db, get_categories, get_directions)
+from app.database.requests import (fetch_accounts_db, get_currencies_db,
+                                   get_categories, get_directions,
+                                   fetch_my_accounts_db, check_currency_db)
 
 
 def all_currencies_kb():
@@ -50,3 +52,13 @@ def directions_kb(cat):
     directs.add(InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return directs.as_markup()
 
+
+def my_accs(tg_id):
+    accounts = fetch_my_accounts_db(tg_id)
+    kb = InlineKeyboardBuilder()
+    for acc in accounts:
+        cur = check_currency_db(acc[3])
+        kb.add(InlineKeyboardButton(text=f'{acc[1]} | {acc[2]} {cur[1]}', callback_data=f'acc_{acc[0]}'))
+    kb.add(InlineKeyboardButton(text='❌ Назад', callback_data='cancel'))
+    kb.adjust(1)
+    return kb.as_markup()

@@ -190,7 +190,7 @@ async def topup_directions(callback: types.CallbackQuery, state: FSMContext):
         await state.set_state(TopUp.sure)
         tdata = await state.get_data()
         update_balance_top(tdata)
-        await callback.message.answer(f'Счёт успешно пополнен!')
+        await callback.message.answer(f'✅ Счёт успешно пополнен!')
         await callback.message.answer(f'💸 Доброго времени суток, {callback.from_user.first_name}!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup=kb.main_kb)
 
 
@@ -202,15 +202,13 @@ async def topup_directions(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(lambda c: c.data == 'myaccounts')
 async def my_accounts(callback: types.CallbackQuery):
-    udata = fetch_my_accounts_db(callback.from_user.id)
-    print(udata)
-    udt = []
-    for data in udata:
-        cur = check_currency_db(data[3])
-        print(cur)
-        udt.append(f'Счёт: {data[1]}\nБаланс: {data[2]} {cur[1]}\n\n')
     await callback.answer('')
-    await callback.message.answer(''.join(udt))
+    await callback.message.answer('Ваши счета 👇', reply_markup=kb.my_accs(callback.from_user.id))
+
+
+@router.callback_query(lambda c: c.data.startswith('acc_'))
+async def edit_my_acc(callback: types.CallbackQuery):
+    await callback.message.answer('Данный раздел в разработке.')
 
 
 """
@@ -273,5 +271,17 @@ async def spend_directions(callback: types.CallbackQuery, state: FSMContext):
         await state.set_state(Spend.sure)
         tdata = await state.get_data()
         update_balance_down(tdata)
-        await callback.message.answer(f'Расход успешно записан.')
+        await callback.message.answer(f'✅ Расход успешно записан.')
         await callback.message.answer(f'💸 Доброго времени суток, {callback.from_user.first_name}!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup=kb.main_kb)
+
+
+"""
+
+СТАТИСТИКА
+
+"""
+
+@router.callback_query(lambda c: c.data == 'statistics')
+async def stats(callback: types.Message):
+    stats = all_stats(callback.from_user.id)
+    await callback.message.answer('Данный раздел в разработке.')

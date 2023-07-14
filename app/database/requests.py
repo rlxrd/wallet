@@ -108,6 +108,19 @@ def fetch_my_accounts_db(tg_id):
         return accounts_d
 
 
+def all_stats(tg_id):
+    with Session.begin() as session:
+        history_list = []
+        user = session.execute(select(Users.id).where(Users.tg_id == tg_id)).first()
+        accounts = session.execute(select(Accounts.id).where(Accounts.user == user.id)).all()
+        for acc in accounts:
+            topups = session.execute(select(TopUps.id, TopUps.date, TopUps.amount, TopUps.account, TopUps.direction).where(TopUps.account == acc.id)).all()
+            spendings = session.execute(select(Spendings.id, Spendings.date, Spendings.amount, Spendings.account, Spendings.direction).where(Spendings.account == acc.id)).all()
+            history_list.append(topups)
+            history_list.append(spendings)
+        return history_list
+
+
 """КОМАНДЫ
 ДЛЯ АДМИНИСТРАТОРОВ
 """
