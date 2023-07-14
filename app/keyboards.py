@@ -11,7 +11,7 @@ def all_currencies_kb():
     cur_kb = InlineKeyboardBuilder()
     for cur in currencies:
         cur_kb.add(InlineKeyboardButton(text=cur.name, callback_data=cur.id))
-    cur_kb.adjust(4)
+    cur_kb.adjust(3)
     return cur_kb.as_markup()
 
 
@@ -41,6 +41,7 @@ def categiroes_kb(direct):
     for cat in all_categiroes:
         ckbs.add(InlineKeyboardButton(text=cat.name, callback_data=cat.id))
     ckbs.add(InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
+    ckbs.adjust(1)
     return ckbs.as_markup()
 
 
@@ -50,6 +51,7 @@ def directions_kb(cat):
     for dir in all_directs:
         directs.add(InlineKeyboardButton(text=dir.name, callback_data=dir.id))
     directs.add(InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
+    directs.adjust(2)
     return directs.as_markup()
 
 
@@ -59,6 +61,13 @@ def my_accs(tg_id):
     for acc in accounts:
         cur = check_currency_db(acc[3])
         kb.add(InlineKeyboardButton(text=f'{acc[1]} | {acc[2]} {cur[1]}', callback_data=f'acc_{acc[0]}'))
-    kb.add(InlineKeyboardButton(text='❌ Назад', callback_data='cancel'))
+    kb.add(InlineKeyboardButton(text='✅ Создать новый счёт', callback_data='add_new_acc'))
+    kb.add(InlineKeyboardButton(text='◀️ Назад', callback_data='cancel'))
     kb.adjust(1)
     return kb.as_markup()
+
+cancel_ikb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='❌ Отмена', callback_data='cancel')]])
+
+def acc_settings(acc_id):
+    acc_setting = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='❌ Удалить счёт', callback_data=f'delete_{acc_id}')], [InlineKeyboardButton(text='◀️ Назад', callback_data='cancel')]])
+    return acc_setting

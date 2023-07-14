@@ -36,6 +36,9 @@ class Spend(StatesGroup):
     sure = State()
 
 
+class DeleteAcc(StatesGroup):
+    sure = State()
+
 """
 
 Главный обработчик + проверка на созданный счёт.
@@ -208,8 +211,27 @@ async def my_accounts(callback: types.CallbackQuery):
 
 @router.callback_query(lambda c: c.data.startswith('acc_'))
 async def edit_my_acc(callback: types.CallbackQuery):
-    await callback.message.answer('Данный раздел в разработке.')
+    acc_id = callback.data.split('_')[1]
+    account = check_account_db(acc_id)
+    cur = check_currency_db(account.currency)
+    await callback.message.answer(f'Вы выбрали счёт: {account.name}\nБаланс: {account.balance} {cur.name}\nID: {account.id}', reply_markup=kb.acc_settings(acc_id))
 
+
+@router.callback_query(lambda c: c.data.startswith('delete_'))
+async def delete_my_acc(callback: types.CallbackQuery, state: FSMContext):
+    acc_id = callback.data.split('_')[1]
+    account = check_account_db(acc_id)
+    cur = check_currency_db(account.currency)
+    await state.set_state(DeleteAcc.sure)
+    await state.update_data(account=acc_id)
+    await callback.message.answer(f'Вы уверены, что хотите удалить счёт? {account.name}', reply_markup=kb.sure)
+
+@router.callback_query(lambda c: c.data == 'yesyes', DeleteAcc.sure)
+async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    delete_acc(data)
+    await callback.message.answer('Счёт успешно удален.')
+    
 
 """
 
@@ -285,3 +307,15 @@ async def spend_directions(callback: types.CallbackQuery, state: FSMContext):
 async def stats(callback: types.Message):
     stats = all_stats(callback.from_user.id)
     await callback.message.answer('Данный раздел в разработке.')
+
+
+""" 
+
+СОЗДАНИЕ НОВОГО СЧЕТА!
+
+"""
+@router.callback_query(lambda c: c.data == 'add_new_acc')
+async def add_new_acc(callback: types.Message, state: FSMContext):
+    await state.set_state(Registration.name)
+    await callback.message.answer(f'👉 Введите название счёта. Например: Основной.', reply_markup=kb.cancel_ikb)
+    

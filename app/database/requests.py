@@ -1,6 +1,6 @@
 from app.database.models import Session
 from app.database.models import Users, Currency, Accounts, TopUps, Spendings, Categories, Directions
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 import datetime
 
 
@@ -119,6 +119,13 @@ def all_stats(tg_id):
             history_list.append(topups)
             history_list.append(spendings)
         return history_list
+
+
+def delete_acc(acc_id):
+    with Session.begin() as session:
+        session.execute(delete(Accounts).where(Accounts.id == acc_id["account"]))
+        session.commit()
+
 
 
 """КОМАНДЫ
