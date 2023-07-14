@@ -10,7 +10,7 @@ def all_currencies_kb():
     
     cur_kb = InlineKeyboardBuilder()
     for cur in currencies:
-        cur_kb.add(InlineKeyboardButton(text=cur.name, callback_data=cur.id))
+        cur_kb.add(InlineKeyboardButton(text=f'{cur.name} | {cur.code}', callback_data=cur.id))
     cur_kb.adjust(3)
     return cur_kb.as_markup()
 
@@ -59,8 +59,11 @@ def my_accs(tg_id):
     accounts = fetch_my_accounts_db(tg_id)
     kb = InlineKeyboardBuilder()
     for acc in accounts:
-        cur = check_currency_db(acc[3])
-        kb.add(InlineKeyboardButton(text=f'{acc[1]} | {acc[2]} {cur[1]}', callback_data=f'acc_{acc[0]}'))
+        cur = check_currency_db(acc[4])
+        try:
+            kb.add(InlineKeyboardButton(text=f'{acc[2]} | {acc[3]} {cur[1]}', callback_data=f'acc_{acc[0]}'))
+        except:
+            continue
     kb.add(InlineKeyboardButton(text='✅ Создать новый счёт', callback_data='add_new_acc'))
     kb.add(InlineKeyboardButton(text='◀️ Назад', callback_data='cancel'))
     kb.adjust(1)

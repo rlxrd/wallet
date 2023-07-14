@@ -20,7 +20,7 @@ async def add_user_db(tg_id):
 
 def get_currencies_db():
     with Session.begin() as session:
-        currencies_list = session.execute(select(Currency.id, Currency.name)).all()
+        currencies_list = session.execute(select(Currency.id, Currency.name, Currency.code)).all()
         return currencies_list
 
 
@@ -104,7 +104,7 @@ def update_balance_down(tdata):
 def fetch_my_accounts_db(tg_id):
     with Session.begin() as session:
         user_d = session.execute(select(Users.id).where(Users.tg_id == tg_id)).first()
-        accounts_d = session.execute(select(Accounts.user, Accounts.name, Accounts.balance, Accounts.currency).where(Accounts.user == user_d.id)).all()
+        accounts_d = session.execute(select(Accounts.id, Accounts.user, Accounts.name, Accounts.balance, Accounts.currency).where(Accounts.user == user_d.id)).all()
         return accounts_d
 
 
@@ -132,7 +132,7 @@ def delete_acc(acc_id):
 ДЛЯ АДМИНИСТРАТОРОВ
 """
 
-def add_direction_db(dir_name):
+def add_currency_db(data):
     with Session.begin() as session:
-        session.add(Directions(name=dir_name))
+        session.add(Currency(name=data["name"], code=data["code"]))
         session.commit()

@@ -2,7 +2,7 @@ from aiogram import types, Router, Bot
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-from app.database.requests import add_direction_db
+from app.database.requests import add_currency_db
 import app.keyboards as kb
 import time
 import asyncio
@@ -12,8 +12,9 @@ from config import ADMINS
 admin = Router()
 
 
-class AddDirection(StatesGroup):
+class AddCurrency(StatesGroup):
     name = State()
+    code = State()
 
 
 class AdminProtect(Filter):
@@ -29,14 +30,27 @@ async def apanel(message: types.Message):
     await message.answer('Админ-команды:\n\n/add_direction - добавление валюты')
 
 
-@admin.message(AdminProtect(), Command('add_direction'))
-async def add_direction(message: types.Message, state: FSMContext):
-    await state.set_state(AddDirection.name)
-    await message.answer('Введи название')
+@admin.message(AdminProtect(), Command('add_currency'))
+async def add_currency(message: types.Message, state: FSMContext):
+    await state.set_state(AddCurrency.name)
+    await message.answer('Введите название')
 
 
-@admin.message(AdminProtect(), AddDirection.name)
-async def add_direction_name(message: types.Message, state: FSMContext):
-    add_direction_db(message.text)
-    await message.answer('Готово')
+@admin.message(AdminProtect(), AddCurrency.name)
+async def add_currency(message: types.Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await state.set_state(AddCurrency.code)
+    await message.answer('Введите код')
+
+
+@admin.message(AdminProtect(), AddCurrency.code)
+async def add_currency(message: types.Message, state: FSMContext):
+    await state.update_data(code=message.text)
+    data = await state.get_data()
+    add_currency_db(data)
     await state.clear()
+    await message.answer('Выполнено.')
+
+@admin.message()
+async def unknown(message: types.Message):
+    await message.delete()
