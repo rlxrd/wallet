@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker
 import datetime
-
 import config
 
 engine = create_engine(url=config.SQLALCHEMY_URL,
@@ -19,16 +18,16 @@ class Users(Base):
     __tablename__ = 'users'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(35))
-    tg_id: Mapped[int] = mapped_column()
+    tg_id: Mapped[int]
     is_premium: Mapped[bool] = mapped_column(default=False)
+    actived: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now(), onupdate=datetime.datetime.now())
 
 
 class Currency(Base):
     __tablename__ = 'currencies'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(35))
+    name: Mapped[str] = mapped_column(String(5))
     code: Mapped[str] = mapped_column(String(5))
 
 
@@ -37,25 +36,33 @@ class Accounts(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
-    name: Mapped[str] = mapped_column(String(35))
+    name: Mapped[str] = mapped_column(String(19))
     balance: Mapped[int]
     currency: Mapped[int] = mapped_column(ForeignKey('currencies.id', ondelete='CASCADE'))
+
+
+class Categories(Base):
+    __tablename__ = 'categories'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(32))
+    direct: Mapped[bool]
 
 
 class Directions(Base):
     __tablename__ = 'directions'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100))
-    direct: Mapped[int]
+    name: Mapped[str] = mapped_column(String(32))
+    category: Mapped[int] = mapped_column(ForeignKey('categories.id', ondelete='CASCADE'))
 
 
 class TopUps(Base):
     __tablename__ = 'topups'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    date: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now())
-    amount: Mapped[int] = mapped_column()
+    date: Mapped[datetime.datetime] = mapped_column()
+    amount: Mapped[int]
     account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
 

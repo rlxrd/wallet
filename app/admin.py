@@ -2,11 +2,12 @@ from aiogram import types, Router, Bot
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-from app.database.requests import fetch_admins, add_direction_db
+from app.database.requests import add_direction_db
 import app.keyboards as kb
 import time
 import asyncio
 from aiogram.filters import Command, Filter
+from config import ADMINS
 
 admin = Router()
 
@@ -17,7 +18,7 @@ class AddDirection(StatesGroup):
 
 class AdminProtect(Filter):
     def __init__(self):
-        self.admins = fetch_admins()
+        self.admins = ADMINS
 
     async def __call__(self, message: types.Message):
         return message.from_user.id in self.admins
