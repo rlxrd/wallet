@@ -93,7 +93,7 @@ def update_balance_top(tdata):
         account = session.execute(select(Accounts.id, Accounts.balance).where(Accounts.id == tdata["account"])).first()
         direction = session.execute(select(Directions.id).where(Directions.id == tdata["direction"])).first()
         session.add(TopUps(date=datetime.datetime.now(), amount=tdata["amount"], account=account.id, direction=direction.id))
-        session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance + int(tdata["amount"]))))
+        session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance + float(tdata["amount"]))))
         session.commit()
 
 
@@ -102,7 +102,7 @@ def update_balance_down(tdata):
         account = session.execute(select(Accounts.id, Accounts.balance).where(Accounts.id == tdata["account"])).first()
         direction = session.execute(select(Directions.id).where(Directions.id == tdata["direction"])).first()
         session.add(Spendings(date=datetime.datetime.now(), amount=tdata["amount"], account=account.id, direction=direction.id))
-        session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance - int(tdata["amount"]))))
+        session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance - float(tdata["amount"]))))
         session.commit()
 
         

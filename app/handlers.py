@@ -96,14 +96,14 @@ async def registration_currency(callback: types.CallbackQuery, state: FSMContext
         await state.update_data(currency=callback.data)
         await state.set_state(Registration.amount)
         await callback.answer(f'Выбрано.')
-        await callback.message.edit_text('✅ Теперь введите первоначальный баланс.\n\nДопускаются только целые числа, например: 50000 👇')
+        await callback.message.edit_text('✅ Теперь введите первоначальный баланс.\n\nНапример: 12.500 👇')
 
 
 @router.message(Registration.amount)
 async def registration_amount(message: types.Message, state: FSMContext):
     try:
         if 0 <= float(message.text) <= 9999999999999:
-            await state.update_data(amount=message.text)
+            await state.update_data(amount=float(message.text))
             await state.update_data(user=message.from_user.id)
             reg_data = await state.get_data()
             currency = check_currency_db(reg_data["currency"])
@@ -112,7 +112,7 @@ async def registration_amount(message: types.Message, state: FSMContext):
         else:
             await message.answer('❌ Введите корректное число.')
     except:
-        await message.answer('❌ Пожалуйста введите целое число, например: 10000')    
+        await message.answer('❌ Пожалуйста введите число, например: 13.200')    
             
 
 @router.callback_query(lambda c: c.data == 'yesyes', Registration.sure)
@@ -175,13 +175,13 @@ async def topup_account(callback: types.CallbackQuery, state: FSMContext):
 async def topup_amount(message: types.Message, state: FSMContext):
     try:
         if float(message.text) < 9999999999999:
-            await state.update_data(amount=message.text)
+            await state.update_data(amount=float(message.text))
             await state.set_state(TopUp.category)
             await message.answer('🎯 Теперь выберите направление.', reply_markup=kb.categiroes_kb(True))
         else:
             await message.answer('❌ Число слишком большое!')
     except:
-        await message.answer('❌ Пожалуйста, введите целое число. Например: 10000')
+        await message.answer('❌ Пожалуйста, введите число. Например: 17.145')
 
 
 @router.callback_query(TopUp.category)
@@ -250,7 +250,7 @@ async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
     delete_acc(data)
     await callback.message.edit_text('Счёт успешно удален.')
     await state.clear()
-    await asyncio.sleep(3)
+    await asyncio.sleep(1.5)
     await callback.message.edit_text('Ваши счета 👇', reply_markup=kb.my_accs(callback.from_user.id))
 
 
@@ -284,13 +284,13 @@ async def spend_account(callback: types.CallbackQuery, state: FSMContext):
 async def spend_amount(message: types.Message, state: FSMContext):
     try:
         if float(message.text) < 9999999999999:
-            await state.update_data(amount=message.text)
+            await state.update_data(amount=float(message.text))
             await state.set_state(Spend.category)
             await message.answer('🎯 Теперь выберите направление.', reply_markup=kb.categiroes_kb(False))
         else:
             await message.answer('❌ Число слишком большое!')
     except:
-        await message.answer('❌ Пожалуйста, введите целое число. Например: 10000')
+        await message.answer('❌ Пожалуйста, введите число. Например: 11.100')
 
 
 @router.callback_query(Spend.category)
