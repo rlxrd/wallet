@@ -9,19 +9,20 @@ from app.handlers import router
 from app.admin import admin
 
 
+# Основная функция для запуска бота
 async def main():
-    await db_main()
+    await db_main() # Запуск БД
 
     bot = Bot(token=TOKEN, parse_mode='HTML')
     dp = Dispatcher()
-    dp.include_routers(router, admin)
+    dp.include_routers(router, admin) # Роутеры
     
     await dp.start_polling(bot)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO) # Логгирование
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: # Слушаем Ctrl+C
         print('Exit')

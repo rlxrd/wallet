@@ -14,6 +14,7 @@ class Base(DeclarativeBase):
     pass
 
 
+# Пользователи бота
 class Users(Base):
     __tablename__ = 'users'
     
@@ -23,6 +24,7 @@ class Users(Base):
     actived: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now(), onupdate=datetime.datetime.now())
 
 
+# Доступные валюты
 class Currency(Base):
     __tablename__ = 'currencies'
     
@@ -31,6 +33,7 @@ class Currency(Base):
     code: Mapped[str] = mapped_column(String(5))
 
 
+# Счета пользователей
 class Accounts(Base):
     __tablename__ = 'accounts'
     
@@ -41,6 +44,7 @@ class Accounts(Base):
     currency: Mapped[int] = mapped_column(ForeignKey('currencies.id', ondelete='CASCADE'))
 
 
+# Категории для пополнений и расходов
 class Categories(Base):
     __tablename__ = 'categories'
     
@@ -49,6 +53,7 @@ class Categories(Base):
     direct: Mapped[bool]
 
 
+# Направления для пополнения и расходов
 class Directions(Base):
     __tablename__ = 'directions'
     
@@ -57,6 +62,7 @@ class Directions(Base):
     category: Mapped[int] = mapped_column(ForeignKey('categories.id', ondelete='CASCADE'))
 
 
+# История пополнений
 class TopUps(Base):
     __tablename__ = 'topups'
     
@@ -67,6 +73,7 @@ class TopUps(Base):
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
 
 
+# История списаний
 class Spendings(Base):
     __tablename__ = 'spendings'
     
@@ -77,5 +84,6 @@ class Spendings(Base):
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
 
 
+# Создание всех таблиц (моделей)
 async def db_main():
     Base.metadata.create_all(bind=engine)

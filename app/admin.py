@@ -18,6 +18,9 @@ class AddCurrency(StatesGroup):
 
 
 class AdminProtect(Filter):
+    """
+    Фильтр для проверки пользователя на админа
+    """
     def __init__(self):
         self.admins = ADMINS
 

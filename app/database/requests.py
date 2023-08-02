@@ -3,6 +3,10 @@ from app.database.models import Users, Currency, Accounts, TopUps, Spendings, Ca
 from sqlalchemy import select, update, delete
 import datetime
 
+""" 
+Внимание! Требует внесения корректировок для оптимизации.
+"""
+
 
 # Создание юзера при команде старт и проверка на наличие хоть одного созданного счета.
 async def add_user_db(tg_id):
@@ -18,6 +22,7 @@ async def add_user_db(tg_id):
         return True
 
 
+# Получение валют
 def get_currencies_db():
     with Session.begin() as session:
         currencies_list = session.execute(select(Currency.id, Currency.name, Currency.code)).all()

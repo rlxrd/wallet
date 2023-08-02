@@ -5,6 +5,7 @@ from app.database.requests import (fetch_accounts_db, get_currencies_db,
                                    fetch_my_accounts_db, check_currency_db)
 
 
+# Требует внесения корректировок
 def all_currencies_kb():
     currencies = get_currencies_db()
     
@@ -69,7 +70,9 @@ def my_accs(tg_id):
     kb.adjust(1)
     return kb.as_markup()
 
+
 cancel_ikb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='❌ Отмена', callback_data='cancel')]])
+
 
 def acc_settings(acc_id):
     acc_setting = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='❌ Удалить счёт', callback_data=f'delete_{acc_id}')], [InlineKeyboardButton(text='◀️ Назад', callback_data='cancel')]])
