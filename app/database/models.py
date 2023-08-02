@@ -37,7 +37,7 @@ class Accounts(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
     name: Mapped[str] = mapped_column(String(19))
-    balance: Mapped[int]
+    balance: Mapped[float]
     currency: Mapped[int] = mapped_column(ForeignKey('currencies.id', ondelete='CASCADE'))
 
 
@@ -62,7 +62,7 @@ class TopUps(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[datetime.datetime] = mapped_column()
-    amount: Mapped[int]
+    amount: Mapped[float]
     account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
 
@@ -72,7 +72,7 @@ class Spendings(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[str] = mapped_column()
-    amount: Mapped[int] = mapped_column()
+    amount: Mapped[float] = mapped_column()
     account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
 
