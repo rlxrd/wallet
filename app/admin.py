@@ -50,7 +50,7 @@ async def add_currency(message: types.Message, state: FSMContext):
 async def add_currency(message: types.Message, state: FSMContext):
     await state.update_data(code=message.text)
     data = await state.get_data()
-    add_currency_db(data)
+    await add_currency_db(data)
     await state.clear()
     await message.answer('Выполнено.')
 

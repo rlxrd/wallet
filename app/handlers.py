@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from app.database.requests import *
 import app.keyboards as kb
-import time
+from time import time
 import asyncio
 from aiogram import Bot
 
@@ -54,7 +54,7 @@ async def start_cmd(message: types.Message, state: FSMContext):
         await message.answer('👋 Добро пожаловать в бот Pro Wallet!\n\nНаша задача - помочь Вам с учётом личных финансов. Здесь вы можете контролировать свои расходы и доходы, а также их анализировать! Давайте создадим Ваш первый счёт для начала работы с ботом.\n\n👉 Введите название счёта. Например: Основной.',
                              reply_markup=ReplyKeyboardRemove())
     else:
-        await message.answer(f'💸 Доброго времени суток, {message.from_user.first_name}!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup=kb.main_kb)
+        await message.answer(f'💸 Доброго времени суток, {message.from_user.first_name}!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup= kb.main_kb)
 
 
 # Отмена действий
@@ -85,12 +85,12 @@ async def registration_name(message: types.Message, state: FSMContext, bot: Bot)
     else:
         await state.update_data(name=message.text)
         await state.set_state(Registration.currency)
-        await message.answer(f'✅ Отличное название!\n\nВыберите, в какой валюте будет счёт {message.text}? 👇', reply_markup=kb.all_currencies_kb())
+        await message.answer(f'✅ Отличное название!\n\nВыберите, в какой валюте будет счёт {message.text}? 👇', reply_markup=await kb.all_currencies_kb())
 
 
 @router.callback_query(Registration.currency)
 async def registration_currency(callback: types.CallbackQuery, state: FSMContext):
-    if not check_currency_db(callback.data):
+    if not await check_currency_db(callback.data):
         await callback.message.answer('❌ Ошибка... Такой валюты нету.')
     else:
         await state.update_data(currency=callback.data)
@@ -106,19 +106,19 @@ async def registration_amount(message: types.Message, state: FSMContext):
             await state.update_data(amount=float(message.text))
             await state.update_data(user=message.from_user.id)
             reg_data = await state.get_data()
-            currency = check_currency_db(reg_data["currency"])
+            currency = await check_currency_db(reg_data["currency"])
             await state.set_state(Registration.sure)
             await message.answer(f'🔒 Информация о счёте:\n\nНазвание: {reg_data["name"]}\nБаланс: {reg_data["amount"]} {currency.name}\n\nПроверьте и подтвердите 👇', reply_markup=kb.sure)
         else:
             await message.answer('❌ Введите корректное число.')
-    except:
-        await message.answer('❌ Пожалуйста введите число, например: 13.200')    
+    except Exception as error:
+        await message.answer(f'❌ Пожалуйста введите число, например: 13.200, {error}')    
             
 
 @router.callback_query(lambda c: c.data == 'yesyes', Registration.sure)
 async def registration_done(callback: types.CallbackQuery, state: FSMContext):
     reg_data = await state.get_data()
-    if set_account_db(reg_data):
+    if await set_account_db(reg_data):
         await callback.message.edit_text(f'✅ Регистрация успешно завершена!\n\nТеперь Вы можете управлять своими счетами по кнопкам ниже.', reply_markup=kb.main_kb)
         await state.clear()
     else:
@@ -133,7 +133,7 @@ async def registration_canceled(callback: types.CallbackQuery, state: FSMContext
         await state.set_state(Registration.name)
         await callback.message.answer('🤔 Введите название счёта. Например: Основной.', reply_markup=ReplyKeyboardRemove())
     else:
-        await callback.message.answer(f'💸 Доброго времени суток, {callback.from_user.first_name}!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup=kb.main_kb)
+        await callback.message.answer(f'💸 Доброго времени суток, {callback.from_user.first_name}!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup= kb.main_kb)
 
 
 """
@@ -152,17 +152,17 @@ async def registration_canceled(callback: types.CallbackQuery, state: FSMContext
 async def topup(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(TopUp.account)
     await callback.answer('Вы выбрали пополнение.')
-    await callback.message.edit_text('🔒 Выберите счёт для <b>пополнения</b>.', reply_markup=kb.users_accounts_kb(callback.from_user.id))
+    await callback.message.edit_text('🔒 Выберите счёт для <b>пополнения</b>.', reply_markup=await kb.users_accounts_kb(callback.from_user.id))
 
 
 @router.callback_query(TopUp.account)
 async def topup_account(callback: types.CallbackQuery, state: FSMContext):
-    acc_data = check_account_db(callback.data)
+    acc_data = await check_account_db(callback.data)
     if not acc_data:
         await callback.message.answer('❌ Выбранного счета не существует!')
     else:
         try:
-            currency_info = check_currency_db(acc_data.currency)
+            currency_info = await check_currency_db(acc_data.currency)
             await state.update_data(account=callback.data)
             await state.set_state(TopUp.amount)
             await callback.answer(f'Вы выбрали {acc_data.name}')
@@ -177,7 +177,7 @@ async def topup_amount(message: types.Message, state: FSMContext):
         if float(message.text) < 9999999999999:
             await state.update_data(amount=float(message.text))
             await state.set_state(TopUp.category)
-            await message.answer('🎯 Теперь выберите направление.', reply_markup=kb.categiroes_kb(True))
+            await message.answer('🎯 Теперь выберите направление.', reply_markup= await kb.categiroes_kb(True))
         else:
             await message.answer('❌ Число слишком большое!')
     except:
@@ -192,20 +192,20 @@ async def topup_category(callback: types.CallbackQuery, state: FSMContext):
     else:
         await state.update_data(category=callback.data)
         await state.set_state(TopUp.direction)
-        await callback.message.edit_text(f'Выберите направление.', reply_markup=kb.directions_kb(callback.data))
+        await callback.message.edit_text(f'Выберите направление.', reply_markup= await kb.directions_kb(callback.data))
 
 
 @router.callback_query(TopUp.direction)
 async def topup_directions(callback: types.CallbackQuery, state: FSMContext):
-    direct_check = get_directions(callback.data)
+    direct_check = await get_directions(callback.data)
     if not direct_check:
         await callback.message.answer('❌ Такого направления нет!')
     else:
         await state.update_data(direction=callback.data)
         await state.set_state(TopUp.sure)
         tdata = await state.get_data()
-        update_balance_top(tdata)
-        await callback.message.edit_text(f'✅ Счёт успешно пополнен!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup=kb.main_kb)
+        await update_balance_top(tdata)
+        await callback.message.edit_text(f'✅ Счёт успешно пополнен!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup= kb.main_kb)
         await state.clear()
 
 """
@@ -217,28 +217,28 @@ async def topup_directions(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda c: c.data == 'myaccounts')
 async def my_accounts(callback: types.CallbackQuery):
     await callback.answer('')
-    await callback.message.edit_text('Ваши счета 👇', reply_markup=kb.my_accs(callback.from_user.id))
+    await callback.message.edit_text('Ваши счета 👇', reply_markup= await kb.my_accs(callback.from_user.id))
 
 
 @router.callback_query(lambda c: c.data.startswith('acc_'))
 async def edit_my_acc(callback: types.CallbackQuery):
     acc_id = callback.data.split('_')[1]
-    account = check_account_db(acc_id)
+    account = await check_account_db(acc_id)
     try:
-        cur = check_currency_db(account.currency)
-        await callback.message.edit_text(f'Вы выбрали счёт: {account.name}\nБаланс: {account.balance} {cur.name}\nID: {account.id}', reply_markup=kb.acc_settings(acc_id))
+        cur = await check_currency_db(account.currency)
+        await callback.message.edit_text(f'Вы выбрали счёт: {account.name}\nБаланс: {account.balance} {cur.name}\nID: {account.id}', reply_markup= await kb.acc_settings(acc_id))
     except:
         await callback.message.edit_text(f'Выбранный счет отсутствует.')
         await asyncio.sleep(3)
-        await callback.message.edit_text('Ваши счета 👇', reply_markup=kb.my_accs(callback.from_user.id))
+        await callback.message.edit_text('Ваши счета 👇', reply_markup= await kb.my_accs(callback.from_user.id))
 
 
 # Удаление счета
 @router.callback_query(lambda c: c.data.startswith('delete_'))
 async def delete_my_acc(callback: types.CallbackQuery, state: FSMContext):
     acc_id = callback.data.split('_')[1]
-    account = check_account_db(acc_id)
-    cur = check_currency_db(account.currency)
+    account = await check_account_db(acc_id)
+    cur = await check_currency_db(account.currency)
     await state.set_state(DeleteAcc.sure)
     await state.update_data(account=acc_id)
     await callback.message.edit_text(f'Вы уверены, что хотите удалить счёт? {account.name}', reply_markup=kb.sure)
@@ -247,11 +247,24 @@ async def delete_my_acc(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda c: c.data == 'yesyes', DeleteAcc.sure)
 async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    delete_acc(data)
+    await delete_acc(data)
     await callback.message.edit_text('Счёт успешно удален.')
     await state.clear()
     await asyncio.sleep(1.5)
-    await callback.message.edit_text('Ваши счета 👇', reply_markup=kb.my_accs(callback.from_user.id))
+    await callback.message.edit_text('Ваши счета 👇', reply_markup= await kb.my_accs(callback.from_user.id))
+
+
+@router.callback_query(lambda c: c.data == 'nono', DeleteAcc.sure)
+async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
+    try:
+        await callback.message.delete()
+    except:
+        print('error 1')
+    try:
+        await state.clear()
+    except:
+        print('error 2')
+    await callback.message.answer(f'💸 Доброго времени суток, {callback.from_user.first_name}!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup=kb.main_kb)
 
 
 """
@@ -264,16 +277,16 @@ async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
 async def spend(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(Spend.account)
     await callback.answer('Вы выбрали расход.')
-    await callback.message.edit_text('🔒 Выберите счёт для <b>расхода</b>.', reply_markup=kb.users_accounts_kb(callback.from_user.id))
+    await callback.message.edit_text('🔒 Выберите счёт для <b>расхода</b>.', reply_markup= await kb.users_accounts_kb(callback.from_user.id))
 
 
 @router.callback_query(Spend.account)
 async def spend_account(callback: types.CallbackQuery, state: FSMContext):
-    acc_data = check_account_db(callback.data)
+    acc_data = await check_account_db(callback.data)
     if not acc_data:
         await callback.message.answer('❌ Выбранного счета не существует!')
     else:
-        currency_info = check_currency_db(acc_data.currency)
+        currency_info = await check_currency_db(acc_data.currency)
         await state.update_data(account=callback.data)
         await state.set_state(Spend.amount)
         await callback.answer(f'Вы выбрали {acc_data.name}')
@@ -286,7 +299,7 @@ async def spend_amount(message: types.Message, state: FSMContext):
         if float(message.text) < 9999999999999:
             await state.update_data(amount=float(message.text))
             await state.set_state(Spend.category)
-            await message.answer('🎯 Теперь выберите направление.', reply_markup=kb.categiroes_kb(False))
+            await message.answer('🎯 Теперь выберите направление.', reply_markup= await kb.categiroes_kb(False))
         else:
             await message.answer('❌ Число слишком большое!')
     except:
@@ -295,26 +308,26 @@ async def spend_amount(message: types.Message, state: FSMContext):
 
 @router.callback_query(Spend.category)
 async def spend_category(callback: types.CallbackQuery, state: FSMContext):
-    category_check = check_categories(callback.data)
+    category_check = await check_categories(callback.data)
     if not category_check:
         await callback.message.answer('❌ Такой категории нет!')
     else:
         await state.update_data(category=callback.data)
         await state.set_state(Spend.direction)
-        await callback.message.edit_text(f'Выберите направление.', reply_markup=kb.directions_kb(callback.data))
+        await callback.message.edit_text(f'Выберите направление.', reply_markup= await kb.directions_kb(callback.data))
 
 
 @router.callback_query(Spend.direction)
 async def spend_directions(callback: types.CallbackQuery, state: FSMContext):
-    direct_check = get_directions(callback.data)
+    direct_check = await get_directions(callback.data)
     if not direct_check:
         await callback.message.answer('❌ Такого направления нет!')
     else:
         await state.update_data(direction=callback.data)
         await state.set_state(Spend.sure)
         tdata = await state.get_data()
-        update_balance_down(tdata)
-        await callback.message.edit_text(f'✅ Расход успешно записан!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup=kb.main_kb)
+        await update_balance_down(tdata)
+        await callback.message.edit_text(f'✅ Расход успешно записан!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup= kb.main_kb)
         await state.clear()
 
 

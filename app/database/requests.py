@@ -1,143 +1,116 @@
-from app.database.models import Session
+from app.database.models import async_session as session
 from app.database.models import Users, Currency, Accounts, TopUps, Spendings, Categories, Directions
 from sqlalchemy import select, update, delete
-import datetime
+from datetime import datetime
 
 """ 
 Внимание! Требует внесения корректировок для оптимизации.
 """
 
-
 # Создание юзера при команде старт и проверка на наличие хоть одного созданного счета.
-async def add_user_db(tg_id):
-    with Session.begin() as session:
-        user_query = session.scalar(select(Users.id).where(Users.tg_id == tg_id))
-        if not user_query:
-            session.add(Users(tg_id=tg_id))
-
-        user_accounts = session.scalar(select(Accounts.id).where(Accounts.user == user_query))
-        session.commit()
-        if not user_accounts:
-            return False
-        return True
+async def add_user_db(u_id):
+    user_query = await session.scalar(select(Users).where(Users.tg_id == u_id))
+    
+    if not user_query:
+        session.add(Users(tg_id=u_id))
+        await session.commit()
+        return False
+    
+    user_accounts = await session.scalar(select(Accounts.id).where(Accounts.user == user_query.id))
+    if not user_accounts:
+        return False
+    return True
 
 
 # Получение валют
-def get_currencies_db():
-    with Session.begin() as session:
-        currencies_list = session.execute(select(Currency.id, Currency.name, Currency.code)).all()
-        return currencies_list
+async def get_currencies_db():
+    currencies_list = await session.scalars(select(Currency))
+    return currencies_list
 
 
 # Создание счета
-def set_account_db(reg_data):
-    with Session.begin() as session:
-        try:
-            user_d = session.execute(select(Users.id).where(Users.tg_id == reg_data['user'])).first()
-            currency_d = session.execute(select(Currency.id).where(Currency.id == reg_data['currency'])).first()
-            session.add(Accounts(name=reg_data['name'], balance=reg_data['amount'], currency=currency_d.id, user=user_d.id))
-            session.commit()
-            return True
-        except:
-            return False
+async def set_account_db(reg_data):
+    try:
+        user_d = await session.scalar(select(Users).where(Users.tg_id == reg_data['user']))
+        currency_d = await session.scalar(select(Currency).where(Currency.id == reg_data['currency']))
+        session.add(Accounts(name=reg_data['name'], balance=reg_data['amount'], currency=currency_d.id, user=user_d.id))
+        await session.commit()
+        return True
+    except:
+        return False
 
 
-def check_currency_db(currency):
-    with Session.begin() as session:
-        user = session.execute(select(Currency.id, Currency.name).where(Currency.id == currency)).first()
-        if not user:
-            return False
-        return user
+async def check_currency_db(currency):
+    currency_data = await session.scalar(select(Currency).where(Currency.id == currency))
+    if not currency_data:
+        return False
+    return currency_data
 
 
-def fetch_accounts_db(tg_id):
-    with Session.begin() as session:
-        user_d = session.execute(select(Users.id).where(Users.tg_id == tg_id)).first()
-        accounts_d = session.execute(select(Accounts.id, Accounts.name).where(Accounts.user == user_d.id)).all()
-        return accounts_d
+async def fetch_accounts_db(tg_id):
+    user_d = await session.scalar(select(Users).where(Users.tg_id == tg_id))
+    accounts_d = await session.scalars(select(Accounts).where(Accounts.user == user_d.id))
+    return accounts_d
 
 
-def check_account_db(account):
-    with Session.begin() as session:
-        account_data = session.execute(select(Accounts.id, Accounts.name, Accounts.balance, Accounts.currency).where(Accounts.id == account)).first()
-        if not account:
-            return False
-        else:
-            return account_data
+async def check_account_db(account):
+    account_data = await session.scalar(select(Accounts).where(Accounts.id == account))
+    if not account_data:
+        return False
+    else:
+        return account_data
 
 
-def get_categories(direct):
-    with Session.begin() as session:
-        categories = session.execute(select(Categories.id, Categories.name).where(Categories.direct == direct)).all()
+async def get_categories(direct):
+        categories = await session.scalars(select(Categories).where(Categories.direct == direct))
         return categories
 
 
-def check_categories(direct):
-    with Session.begin() as session:
-        categories = session.execute(select(Categories).where(Categories.id == direct)).all()
-        if not categories:
-            return False
-        return categories
+async def check_categories(direct):
+    categories = await session.scalars(select(Categories).where(Categories.id == direct))
+    if not categories:
+        return False
+    return categories
 
 
-def get_directions(cat):
-    with Session.begin() as session:
-        directions = session.execute(select(Directions.id, Directions.name).where(Directions.category == cat))
-        if not directions:
-            return False
-        return directions
+async def get_directions(cat):
+    directions = await session.execute(select(Directions.id, Directions.name).where(Directions.category == cat))
+    if not directions:
+        return False
+    return directions
 
 
-def update_balance_top(tdata):
-    with Session.begin() as session:
-        account = session.execute(select(Accounts.id, Accounts.balance).where(Accounts.id == tdata["account"])).first()
-        direction = session.execute(select(Directions.id).where(Directions.id == tdata["direction"])).first()
-        session.add(TopUps(date=datetime.datetime.now(), amount=tdata["amount"], account=account.id, direction=direction.id))
-        session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance + float(tdata["amount"]))))
-        session.commit()
+async def update_balance_top(tdata):
+    account = await session.scalar(select(Accounts).where(Accounts.id == tdata["account"]))
+    direction = await session.scalar(select(Directions).where(Directions.id == tdata["direction"]))
+    session.add(TopUps(date=datetime.now(), amount=tdata["amount"], account=account.id, direction=direction.id))
+    await session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance + float(tdata["amount"]))))
+    await session.commit()
 
 
-def update_balance_down(tdata):
-    with Session.begin() as session:
-        account = session.execute(select(Accounts.id, Accounts.balance).where(Accounts.id == tdata["account"])).first()
-        direction = session.execute(select(Directions.id).where(Directions.id == tdata["direction"])).first()
-        session.add(Spendings(date=datetime.datetime.now(), amount=tdata["amount"], account=account.id, direction=direction.id))
-        session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance - float(tdata["amount"]))))
-        session.commit()
+async def update_balance_down(tdata):
+    account = await session.scalar(select(Accounts).where(Accounts.id == tdata["account"]))
+    direction = await session.scalar(select(Directions).where(Directions.id == tdata["direction"]))
+    session.add(Spendings(date=datetime.now(), amount=tdata["amount"], account=account.id, direction=direction.id))
+    await session.execute(update(Accounts).where(Accounts.id == account.id).values(balance=(account.balance - float(tdata["amount"]))))
+    await session.commit()
 
         
-def fetch_my_accounts_db(tg_id):
-    with Session.begin() as session:
-        user_d = session.execute(select(Users.id).where(Users.tg_id == tg_id)).first()
-        accounts_d = session.execute(select(Accounts.id, Accounts.user, Accounts.name, Accounts.balance, Accounts.currency).where(Accounts.user == user_d.id)).all()
-        return accounts_d
+async def fetch_my_accounts_db(tg_id):
+    user_d = await session.scalar(select(Users).where(Users.tg_id == tg_id))
+    accounts_d = await session.execute(select(Accounts.id, Accounts.user, Accounts.name, Accounts.balance, Accounts.currency).where(Accounts.user == user_d.id))
+    return accounts_d
 
 
-def all_stats(tg_id):
-    with Session.begin() as session:
-        history_list = []
-        user = session.execute(select(Users.id).where(Users.tg_id == tg_id)).first()
-        accounts = session.execute(select(Accounts.id).where(Accounts.user == user.id)).all()
-        for acc in accounts:
-            topups = session.execute(select(TopUps.id, TopUps.date, TopUps.amount, TopUps.account, TopUps.direction).where(TopUps.account == acc.id)).all()
-            spendings = session.execute(select(Spendings.id, Spendings.date, Spendings.amount, Spendings.account, Spendings.direction).where(Spendings.account == acc.id)).all()
-            history_list.append(topups)
-            history_list.append(spendings)
-        return history_list
-
-
-def delete_acc(acc_id):
-    with Session.begin() as session:
-        session.execute(delete(Accounts).where(Accounts.id == acc_id["account"]))
-        session.commit()
-
+async def delete_acc(acc_id):
+        await session.execute(delete(Accounts).where(Accounts.id == acc_id["account"]))
+        await session.commit()
 
 
 """КОМАНДЫ
 ДЛЯ АДМИНИСТРАТОРОВ
 """
 
-def add_currency_db(data):
-    with Session.begin() as session:
+async def add_currency_db(data):
         session.add(Currency(name=data["name"], code=data["code"]))
-        session.commit()
+        await session.commit()

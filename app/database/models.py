@@ -1,16 +1,18 @@
-from sqlalchemy import create_engine, ForeignKey, String
+from sqlalchemy import ForeignKey, String, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
-from sqlalchemy.orm import sessionmaker
-import datetime
+from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, create_async_engine
+from datetime import datetime
 import config
 
-engine = create_engine(url=config.SQLALCHEMY_URL,
-                       echo=config.SQLALCHEMY_ECHO)
+engine = create_async_engine(
+    config.SQLALCHEMY_URL,
+    echo=config.SQLALCHEMY_ECHO,
+)
+    
+async_session = AsyncSession(engine)
 
-Session = sessionmaker(engine)
 
-
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 
@@ -19,9 +21,8 @@ class Users(Base):
     __tablename__ = 'users'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    tg_id: Mapped[int]
+    tg_id = mapped_column(BigInteger)
     is_premium: Mapped[bool] = mapped_column(default=False)
-    actived: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now(), onupdate=datetime.datetime.now())
 
 
 # Доступные валюты
@@ -67,7 +68,7 @@ class TopUps(Base):
     __tablename__ = 'topups'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    date: Mapped[datetime.datetime] = mapped_column()
+    date: Mapped[datetime] = mapped_column()
     amount: Mapped[float]
     account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
@@ -85,5 +86,6 @@ class Spendings(Base):
 
 
 # Создание всех таблиц (моделей)
-async def db_main():
-    Base.metadata.create_all(bind=engine)
+async def async_main():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

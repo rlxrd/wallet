@@ -2,7 +2,7 @@ import asyncio
 import logging
 from config import TOKEN
 
-from app.database.models import db_main
+from app.database.models import async_main
 from aiogram import Bot, Dispatcher
 
 from app.handlers import router
@@ -11,7 +11,7 @@ from app.admin import admin
 
 # Основная функция для запуска бота
 async def main():
-    await db_main() # Запуск БД
+    await async_main() # Запуск БД
 
     bot = Bot(token=TOKEN, parse_mode='HTML')
     dp = Dispatcher()
