@@ -26,7 +26,7 @@ class Users(Base):
     tg_id = mapped_column(BigInteger)
     is_premium: Mapped[bool] = mapped_column(default=False)
     
-    account_rel: Mapped[List["Accounts"]] = relationship(back_populates="user_rel")
+    account_rel: Mapped[List["Accounts"]] = relationship(back_populates="user_rel", cascade='all, delete')
 
 
 # Доступные валюты
@@ -37,7 +37,7 @@ class Currency(Base):
     name: Mapped[str] = mapped_column(String(5))
     code: Mapped[str] = mapped_column(String(5))
     
-    account_rel: Mapped[List["Accounts"]] = relationship(back_populates="currency_rel")
+    account_rel: Mapped[List["Accounts"]] = relationship(back_populates="currency_rel", cascade='all, delete')
 
 
 # Счета пользователей
@@ -53,7 +53,7 @@ class Accounts(Base):
     user_rel: Mapped["Users"] = relationship(back_populates="account_rel")
     currency_rel: Mapped["Currency"] = relationship(back_populates="account_rel")
     
-    transaction_rel: Mapped[List["Transaction"]] = relationship(back_populates="account_rel")
+    transaction_rel: Mapped[List["Transaction"]] = relationship(back_populates="account_rel", cascade='all, delete')
 
 
 # Категории для пополнений и расходов
@@ -64,7 +64,7 @@ class Categories(Base):
     name: Mapped[str] = mapped_column(String(32))
     direct: Mapped[bool]
     
-    directions_rel: Mapped[List["Directions"]] = relationship(back_populates="category_rel")
+    directions_rel: Mapped[List["Directions"]] = relationship(back_populates="category_rel", cascade='all, delete')
 
 
 # Направления для пополнения и расходов
@@ -76,7 +76,7 @@ class Directions(Base):
     category: Mapped[int] = mapped_column(ForeignKey('categories.id', ondelete='CASCADE'))
     
     category_rel: Mapped["Categories"] = relationship(back_populates="directions_rel")
-    transaction_rel: Mapped["Transaction"] = relationship(back_populates="direction_rel")
+    transaction_rel: Mapped["Transaction"] = relationship(back_populates="direction_rel", cascade='all, delete')
 
 
 # История пополнений

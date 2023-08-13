@@ -94,7 +94,7 @@ async def update_balance(amount, account, direction, type):
         account_data = await session.scalar(select(Accounts).where(Accounts.id == account))
         direction_data = await session.scalar(select(Directions).where(Directions.id == direction))
         session.add(Transaction(date=datetime.now(), amount=amount, account=account_data.id, direction=direction_data.id, type=type))
-        await session.execute(update(Accounts).where(Accounts.id == account_data.id).values(balance=(account_data.balance + float(amount))))
+        await session.execute(update(Accounts).where(Accounts.id == account_data.id).values(balance=(account_data.balance + float(amount)) if type else (account_data.balance - float(amount))))
         await session.commit()
 
         
