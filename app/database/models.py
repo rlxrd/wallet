@@ -1,7 +1,9 @@
 from sqlalchemy import ForeignKey, String, BigInteger
-from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
-from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, create_async_engine
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
+from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+
 from datetime import datetime
+from typing import List
 import config
 
 engine = create_async_engine(
@@ -9,7 +11,7 @@ engine = create_async_engine(
     echo=config.SQLALCHEMY_ECHO,
 )
     
-async_session = AsyncSession(engine)
+async_session = async_sessionmaker(engine)
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -23,6 +25,8 @@ class Users(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     tg_id = mapped_column(BigInteger)
     is_premium: Mapped[bool] = mapped_column(default=False)
+    
+    account_rel: Mapped[List["Accounts"]] = relationship(back_populates="user_rel")
 
 
 # Доступные валюты
@@ -32,6 +36,8 @@ class Currency(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(5))
     code: Mapped[str] = mapped_column(String(5))
+    
+    account_rel: Mapped[List["Accounts"]] = relationship(back_populates="currency_rel")
 
 
 # Счета пользователей
@@ -43,6 +49,11 @@ class Accounts(Base):
     name: Mapped[str] = mapped_column(String(19))
     balance: Mapped[float]
     currency: Mapped[int] = mapped_column(ForeignKey('currencies.id', ondelete='CASCADE'))
+    
+    user_rel: Mapped["Users"] = relationship(back_populates="account_rel")
+    currency_rel: Mapped["Currency"] = relationship(back_populates="account_rel")
+    
+    transaction_rel: Mapped[List["Transaction"]] = relationship(back_populates="account_rel")
 
 
 # Категории для пополнений и расходов
@@ -52,6 +63,8 @@ class Categories(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(32))
     direct: Mapped[bool]
+    
+    directions_rel: Mapped[List["Directions"]] = relationship(back_populates="category_rel")
 
 
 # Направления для пополнения и расходов
@@ -61,28 +74,25 @@ class Directions(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(32))
     category: Mapped[int] = mapped_column(ForeignKey('categories.id', ondelete='CASCADE'))
+    
+    category_rel: Mapped["Categories"] = relationship(back_populates="directions_rel")
+    transaction_rel: Mapped["Transaction"] = relationship(back_populates="direction_rel")
 
 
 # История пополнений
-class TopUps(Base):
-    __tablename__ = 'topups'
+class Transaction(Base):
+    __tablename__ = 'transaction'
     
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[datetime] = mapped_column()
     amount: Mapped[float]
     account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
-
-
-# История списаний
-class Spendings(Base):
-    __tablename__ = 'spendings'
+    type: Mapped[bool]
     
-    id: Mapped[int] = mapped_column(primary_key=True)
-    date: Mapped[str] = mapped_column()
-    amount: Mapped[float] = mapped_column()
-    account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
-    direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
+    account_rel: Mapped["Accounts"] = relationship(back_populates="transaction_rel")
+    direction_rel: Mapped["Directions"] = relationship(back_populates="transaction_rel")
+
 
 
 # Создание всех таблиц (моделей)

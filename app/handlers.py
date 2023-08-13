@@ -5,9 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from app.database.requests import *
 import app.keyboards as kb
-from time import time
 import asyncio
-from aiogram import Bot
 
 router = Router()
 
@@ -78,7 +76,7 @@ async def cancel(callback: types.CallbackQuery, state: FSMContext):
 """
 
 @router.message(Registration.name)
-async def registration_name(message: types.Message, state: FSMContext, bot: Bot):
+async def registration_name(message: types.Message, state: FSMContext):
     if len(message.text) > 18:
         await message.answer('❌ Название слишком длинное! Максимум 18 символа.')
         return
@@ -186,11 +184,10 @@ async def topup_amount(message: types.Message, state: FSMContext):
 
 @router.callback_query(TopUp.category)
 async def topup_category(callback: types.CallbackQuery, state: FSMContext):
-    category_check = check_categories(callback.data)
+    category_check = await check_categories(callback.data)
     if not category_check:
         await callback.message.answer('❌ Такой категории нет!')
     else:
-        await state.update_data(category=callback.data)
         await state.set_state(TopUp.direction)
         await callback.message.edit_text(f'Выберите направление.', reply_markup= await kb.directions_kb(callback.data))
 
@@ -204,7 +201,7 @@ async def topup_directions(callback: types.CallbackQuery, state: FSMContext):
         await state.update_data(direction=callback.data)
         await state.set_state(TopUp.sure)
         tdata = await state.get_data()
-        await update_balance_top(tdata)
+        await update_balance(tdata["amount"], tdata["account"], tdata["direction"], True)
         await callback.message.edit_text(f'✅ Счёт успешно пополнен!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup= kb.main_kb)
         await state.clear()
 
@@ -312,7 +309,6 @@ async def spend_category(callback: types.CallbackQuery, state: FSMContext):
     if not category_check:
         await callback.message.answer('❌ Такой категории нет!')
     else:
-        await state.update_data(category=callback.data)
         await state.set_state(Spend.direction)
         await callback.message.edit_text(f'Выберите направление.', reply_markup= await kb.directions_kb(callback.data))
 
@@ -326,7 +322,7 @@ async def spend_directions(callback: types.CallbackQuery, state: FSMContext):
         await state.update_data(direction=callback.data)
         await state.set_state(Spend.sure)
         tdata = await state.get_data()
-        await update_balance_down(tdata)
+        await update_balance(tdata["amount"], tdata["account"], tdata["direction"], False)
         await callback.message.edit_text(f'✅ Расход успешно записан!\n\nУправляйте счетами по кнопкам ниже. 👇', reply_markup= kb.main_kb)
         await state.clear()
 
