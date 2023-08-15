@@ -1,6 +1,6 @@
 from app.database.models import async_session
 from app.database.models import Users, Currency, Accounts, Transaction, Categories, Directions
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, desc
 from datetime import datetime
 
 """ 
@@ -93,7 +93,7 @@ async def update_balance(amount, account, direction, type):
     async with async_session() as session:
         account_data = await session.scalar(select(Accounts).where(Accounts.id == account))
         direction_data = await session.scalar(select(Directions).where(Directions.id == direction))
-        session.add(Transaction(date=datetime.now(), amount=amount, account=account_data.id, direction=direction_data.id, type=type))
+        session.add(Transaction(date=datetime.now().strftime("%Y-%m-%d %H:%M"), amount=amount, account=account_data.id, direction=direction_data.id, type=type))
         await session.execute(update(Accounts).where(Accounts.id == account_data.id).values(balance=(account_data.balance + float(amount)) if type else (account_data.balance - float(amount))))
         await session.commit()
 
@@ -111,6 +111,21 @@ async def delete_acc(acc_id):
         await session.delete(account)
         await session.commit()
 
+
+async def get_all_stats(tg_id):
+    async with async_session() as session:
+        user = await session.scalar(select(Users).where(Users.tg_id == tg_id))
+        accounts = await session.scalars(select(Accounts).where(Accounts.user == user.id))
+        if not accounts:
+            return False
+        transactions_all = {}
+        for account in accounts:
+            currency = await session.scalar(select(Currency.name).where(Currency.id == account.currency))
+            transactions = await session.scalars(select(Transaction).where(Transaction.account == account.id).order_by(desc(Transaction.id)))
+            for transaction in transactions:
+                transactions_all[transaction.id] = f'{"🟢" if transaction.type else "🔴"} {transaction.date[-14:]} | {transaction.amount} {currency}'
+    return dict(sorted(transactions_all.items(), key=lambda item: item[0])[-10:])
+        
 
 """КОМАНДЫ
 ДЛЯ АДМИНИСТРАТОРОВ

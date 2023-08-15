@@ -1,4 +1,4 @@
-from aiogram import types, Router
+from aiogram import types, Router, F
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
@@ -56,7 +56,7 @@ async def start_cmd(message: types.Message, state: FSMContext):
 
 
 # Отмена действий
-@router.callback_query(lambda c: c.data == 'cancel')
+@router.callback_query(F.data == 'cancel')
 async def cancel(callback: types.CallbackQuery, state: FSMContext):
     try:
         await callback.message.delete()
@@ -113,7 +113,7 @@ async def registration_amount(message: types.Message, state: FSMContext):
         await message.answer(f'❌ Пожалуйста введите число, например: 13.200, {error}')    
             
 
-@router.callback_query(lambda c: c.data == 'yesyes', Registration.sure)
+@router.callback_query(F.data == 'yesyes', Registration.sure)
 async def registration_done(callback: types.CallbackQuery, state: FSMContext):
     reg_data = await state.get_data()
     if await set_account_db(reg_data):
@@ -124,7 +124,7 @@ async def registration_done(callback: types.CallbackQuery, state: FSMContext):
         await state.clear()
 
 
-@router.callback_query(lambda c: c.data == 'nono', Registration.sure)
+@router.callback_query(F.data == 'nono', Registration.sure)
 async def registration_canceled(callback: types.CallbackQuery, state: FSMContext):
     user_reg = await add_user_db(callback.from_user.id)
     if not user_reg:
@@ -146,11 +146,15 @@ async def registration_canceled(callback: types.CallbackQuery, state: FSMContext
 """
 
 
-@router.callback_query(lambda c: c.data == 'topup')
+@router.callback_query(F.data == 'topup')
 async def topup(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(TopUp.account)
     await callback.answer('Вы выбрали пополнение.')
-    await callback.message.edit_text('🔒 Выберите счёт для <b>пополнения</b>.', reply_markup=await kb.users_accounts_kb(callback.from_user.id))
+    try:
+        await callback.message.delete()
+    except Exception as err:
+        print(err)
+    await callback.message.answer('🔒 Выберите счёт для <b>пополнения</b>.', reply_markup=await kb.users_accounts_kb(callback.from_user.id))
 
 
 @router.callback_query(TopUp.account)
@@ -211,13 +215,17 @@ async def topup_directions(callback: types.CallbackQuery, state: FSMContext):
 
 """
 
-@router.callback_query(lambda c: c.data == 'myaccounts')
+@router.callback_query(F.data == 'myaccounts')
 async def my_accounts(callback: types.CallbackQuery):
     await callback.answer('')
-    await callback.message.edit_text('Ваши счета 👇', reply_markup= await kb.my_accs(callback.from_user.id))
+    try:
+        await callback.message.delete()
+    except Exception as err:
+        print(err)
+    await callback.message.answer('Ваши счета 👇', reply_markup= await kb.my_accs(callback.from_user.id))
 
 
-@router.callback_query(lambda c: c.data.startswith('acc_'))
+@router.callback_query(F.data.startswith('acc_'))
 async def edit_my_acc(callback: types.CallbackQuery):
     acc_id = callback.data.split('_')[1]
     account = await check_account_db(acc_id)
@@ -231,7 +239,7 @@ async def edit_my_acc(callback: types.CallbackQuery):
 
 
 # Удаление счета
-@router.callback_query(lambda c: c.data.startswith('delete_'))
+@router.callback_query(F.data.startswith('delete_'))
 async def delete_my_acc(callback: types.CallbackQuery, state: FSMContext):
     acc_id = callback.data.split('_')[1]
     account = await check_account_db(acc_id)
@@ -241,7 +249,7 @@ async def delete_my_acc(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text(f'Вы уверены, что хотите удалить счёт? {account.name}', reply_markup=kb.sure)
 
 
-@router.callback_query(lambda c: c.data == 'yesyes', DeleteAcc.sure)
+@router.callback_query(F.data == 'yesyes', DeleteAcc.sure)
 async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await delete_acc(data)
@@ -251,7 +259,7 @@ async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text('Ваши счета 👇', reply_markup= await kb.my_accs(callback.from_user.id))
 
 
-@router.callback_query(lambda c: c.data == 'nono', DeleteAcc.sure)
+@router.callback_query(F.data == 'nono', DeleteAcc.sure)
 async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
     try:
         await callback.message.delete()
@@ -270,11 +278,15 @@ async def edit_my_acc(callback: types.CallbackQuery, state: FSMContext):
 
 """
 
-@router.callback_query(lambda c: c.data == 'spend')
+@router.callback_query(F.data == 'spend')
 async def spend(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(Spend.account)
     await callback.answer('Вы выбрали расход.')
-    await callback.message.edit_text('🔒 Выберите счёт для <b>расхода</b>.', reply_markup= await kb.users_accounts_kb(callback.from_user.id))
+    try:
+        await callback.message.delete()
+    except Exception as err:
+        print(err)
+    await callback.message.answer('🔒 Выберите счёт для <b>расхода</b>.', reply_markup= await kb.users_accounts_kb(callback.from_user.id))
 
 
 @router.callback_query(Spend.account)
@@ -333,17 +345,28 @@ async def spend_directions(callback: types.CallbackQuery, state: FSMContext):
 
 """
 
-@router.callback_query(lambda c: c.data == 'statistics')
+@router.callback_query(F.data)
 async def stats(callback: types.Message):
     await callback.answer('Данный раздел в разработке.')
 
 
-@router.callback_query(lambda c: c.data == 'settings')
+@router.callback_query(F.data == 'last_trans')
+async def last_stats(callback: types.Message):
+    stats = await get_all_stats(callback.from_user.id)
+    await callback.answer('Вы выбрали статистику.')
+    try:
+        await callback.message.delete()
+    except Exception as err:
+        print(err)
+    await callback.message.answer('\n'.join(stats.values()), reply_markup=kb.back_ikb)
+    
+
+@router.callback_query(F.data == 'settings')
 async def stats(callback: types.Message):
     await callback.answer('Данный раздел в разработке.')
 
 
-@router.callback_query(lambda c: c.data == 'premium')
+@router.callback_query(F.data == 'premium')
 async def stats(callback: types.Message):
     await callback.answer('Данный раздел в разработке.')
     
@@ -353,7 +376,7 @@ async def stats(callback: types.Message):
 СОЗДАНИЕ НОВОГО СЧЕТА!
 
 """
-@router.callback_query(lambda c: c.data == 'add_new_acc')
+@router.callback_query(F.data == 'add_new_acc')
 async def add_new_acc(callback: types.Message, state: FSMContext):
     await state.set_state(Registration.name)
     await callback.message.answer(f'👉 Введите название счёта. Например: Основной.', reply_markup=kb.cancel_ikb)

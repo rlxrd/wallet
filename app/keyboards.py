@@ -75,8 +75,12 @@ async def my_accs(tg_id):
 
 
 cancel_ikb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='❌ Отмена', callback_data='cancel')]])
+back_ikb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='⬅️ Назад', callback_data='cancel')]])
 
 
 async def acc_settings(acc_id):
     acc_setting = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='❌ Удалить счёт', callback_data=f'delete_{acc_id}')], [InlineKeyboardButton(text='◀️ Назад', callback_data='cancel')]])
     return acc_setting
+
+
+

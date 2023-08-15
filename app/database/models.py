@@ -84,7 +84,7 @@ class Transaction(Base):
     __tablename__ = 'transaction'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    date: Mapped[datetime] = mapped_column()
+    date: Mapped[str] = mapped_column()
     amount: Mapped[float]
     account: Mapped[int] = mapped_column(ForeignKey('accounts.id', ondelete='CASCADE'))
     direction: Mapped[int] = mapped_column(ForeignKey('directions.id', ondelete='CASCADE'))
